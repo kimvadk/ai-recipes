@@ -27,6 +27,24 @@ function chipClass(selected: boolean) {
   ].join(" ");
 }
 
+// Рецепт одним текстом — чтобы вставить в заметки или отправить в мессенджер.
+function recipeToText(recipe: Recipe, servings: number) {
+  const needToBuy = recipe.missing_ingredients.length > 0;
+  return [
+    `${recipe.title} (${recipe.time_minutes} мин)`,
+    recipe.description,
+    needToBuy
+      ? `Докупить: ${recipe.missing_ingredients.join(", ")}`
+      : "Всё есть дома",
+    "",
+    `Ингредиенты (${servingsLabel(servings)}):`,
+    ...recipe.ingredients.map((i) => `- ${i.name} — ${i.amount}`),
+    "",
+    "Приготовление:",
+    ...recipe.steps.map((step, i) => `${i + 1}. ${step}`),
+  ].join("\n");
+}
+
 function RecipeCard({
   recipe,
   servings,
@@ -35,6 +53,21 @@ function RecipeCard({
   servings: number;
 }) {
   const needToBuy = recipe.missing_ingredients.length > 0;
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+
+  async function copyRecipe() {
+    try {
+      await navigator.clipboard.writeText(recipeToText(recipe, servings));
+      setCopyState("copied");
+    } catch {
+      // Например, если браузер запретил доступ к буферу обмена.
+      setCopyState("failed");
+    }
+    setTimeout(() => setCopyState("idle"), 2500);
+  }
+
   return (
     <article className="rounded-3xl bg-white p-7 shadow-md shadow-sand/60">
       <div className="flex flex-wrap items-center gap-3">
@@ -70,6 +103,18 @@ function RecipeCard({
           <li key={i}>{step}</li>
         ))}
       </ol>
+
+      <button
+        type="button"
+        onClick={copyRecipe}
+        className="mt-6 w-full rounded-2xl border-2 border-accent px-5 py-3 text-lg font-semibold text-accent-dark transition hover:bg-cream focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/40"
+      >
+        {copyState === "copied"
+          ? "✓ Скопировано"
+          : copyState === "failed"
+            ? "Не удалось скопировать"
+            : "📋 Скопировать рецепт"}
+      </button>
     </article>
   );
 }
