@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   CUISINES,
   INGREDIENTS,
+  MAX_INGREDIENTS,
   TIMES,
   type Recipe,
 } from "@/lib/recipes";
@@ -62,6 +63,8 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
 
 export default function AppPage() {
   const [selected, setSelected] = useState<string[]>([]);
+  const [custom, setCustom] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState("");
   const [cuisine, setCuisine] = useState<string>(CUISINES[0]);
   const [minutes, setMinutes] = useState<number>(TIMES[1].minutes);
   const [loading, setLoading] = useState(false);
@@ -74,6 +77,21 @@ export default function AppPage() {
     );
   }
 
+  const allIngredients = [...selected, ...custom];
+  const limitReached = allIngredients.length >= MAX_INGREDIENTS;
+
+  // Добавляет свой продукт; повторы (даже с другим регистром) не добавляются.
+  function addCustom(e: FormEvent) {
+    e.preventDefault();
+    const name = customInput.trim().replace(/\s+/g, " ");
+    if (!name || limitReached) return;
+    const exists = [...INGREDIENTS.map((i) => i.name), ...custom].some(
+      (x) => x.toLowerCase() === name.toLowerCase(),
+    );
+    if (!exists) setCustom((prev) => [...prev, name]);
+    setCustomInput("");
+  }
+
   async function generate() {
     setLoading(true);
     setError(null);
@@ -82,7 +100,7 @@ export default function AppPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: selected, cuisine, minutes }),
+        body: JSON.stringify({ ingredients: allIngredients, cuisine, minutes }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.recipes) {
@@ -126,6 +144,47 @@ export default function AppPage() {
             </button>
           ))}
         </div>
+
+        <form onSubmit={addCustom} className="mt-5 flex gap-3">
+          <input
+            type="text"
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            maxLength={40}
+            disabled={limitReached}
+            placeholder="Нет в списке? Впишите свой продукт"
+            aria-label="Свой продукт"
+            className="min-w-0 flex-1 rounded-2xl border-2 border-sand bg-white px-5 py-3 text-lg focus:border-accent focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/40 disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!customInput.trim() || limitReached}
+            className="rounded-2xl bg-accent px-6 py-3 text-lg font-bold text-white transition hover:bg-accent-dark focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Добавить
+          </button>
+        </form>
+        {limitReached && (
+          <p className="mt-2 text-muted">
+            Достаточно! Можно выбрать не больше {MAX_INGREDIENTS} продуктов.
+          </p>
+        )}
+
+        {custom.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-3">
+            {custom.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setCustom((prev) => prev.filter((x) => x !== name))}
+                aria-label={`Убрать: ${name}`}
+                className={chipClass(true)}
+              >
+                {name} ✕
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-8">
@@ -165,12 +224,12 @@ export default function AppPage() {
       <button
         type="button"
         onClick={generate}
-        disabled={selected.length === 0 || loading}
+        disabled={allIngredients.length === 0 || loading}
         className="mt-10 w-full rounded-2xl bg-accent px-8 py-5 text-xl font-bold text-white shadow-lg shadow-accent/30 transition hover:bg-accent-dark focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
       >
         {loading ? "Повар думает…" : "Придумай рецепты"}
       </button>
-      {selected.length === 0 && !loading && (
+      {allIngredients.length === 0 && !loading && (
         <p className="mt-2 text-center text-muted">
           Отметьте хотя бы один продукт.
         </p>
