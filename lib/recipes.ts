@@ -34,6 +34,9 @@ export const TIMES = [
   { minutes: 60, label: "до 1 часа" },
 ] as const;
 
+export const SERVINGS = [1, 2, 3, 4, 5, 6] as const;
+export const DEFAULT_SERVINGS = 2;
+
 export const MAX_INGREDIENTS = 20;
 
 export type Recipe = {

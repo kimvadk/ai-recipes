@@ -4,11 +4,18 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import {
   CUISINES,
+  DEFAULT_SERVINGS,
   INGREDIENTS,
   MAX_INGREDIENTS,
+  SERVINGS,
   TIMES,
   type Recipe,
 } from "@/lib/recipes";
+
+// «1 порция», «2 порции», «5 порций»
+function servingsLabel(n: number) {
+  return n === 1 ? "1 порция" : n < 5 ? `${n} порции` : `${n} порций`;
+}
 
 // Общий вид «таблетки»-кнопки: выбранная — оранжевая, невыбранная — светлая.
 function chipClass(selected: boolean) {
@@ -20,7 +27,13 @@ function chipClass(selected: boolean) {
   ].join(" ");
 }
 
-function RecipeCard({ recipe }: { recipe: Recipe }) {
+function RecipeCard({
+  recipe,
+  servings,
+}: {
+  recipe: Recipe;
+  servings: number;
+}) {
   const needToBuy = recipe.missing_ingredients.length > 0;
   return (
     <article className="rounded-3xl bg-white p-7 shadow-md shadow-sand/60">
@@ -42,7 +55,7 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
           : "✅ Всё есть"}
       </p>
 
-      <h4 className="mt-6 text-lg font-bold">Ингредиенты (2 порции)</h4>
+      <h4 className="mt-6 text-lg font-bold">Ингредиенты ({servingsLabel(servings)})</h4>
       <ul className="mt-2 space-y-1">
         {recipe.ingredients.map((item, i) => (
           <li key={i}>
@@ -70,6 +83,9 @@ export default function AppPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [servings, setServings] = useState<number>(DEFAULT_SERVINGS);
+  // Порции, с которыми были запрошены показанные рецепты (пользователь мог уже переключить кнопки).
+  const [recipesServings, setRecipesServings] = useState<number>(DEFAULT_SERVINGS);
 
   function toggleIngredient(name: string) {
     setSelected((prev) =>
@@ -100,7 +116,12 @@ export default function AppPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: allIngredients, cuisine, minutes }),
+        body: JSON.stringify({
+          ingredients: allIngredients,
+          cuisine,
+          minutes,
+          servings,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.recipes) {
@@ -109,6 +130,7 @@ export default function AppPage() {
         );
       }
       setRecipes(data.recipes);
+      setRecipesServings(servings);
     } catch (e) {
       setError(
         e instanceof TypeError
@@ -221,6 +243,24 @@ export default function AppPage() {
         </div>
       </section>
 
+      <section className="mt-8">
+        <h2 className="text-xl font-bold">4. Сколько порций?</h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {SERVINGS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={servings === n}
+              aria-label={servingsLabel(n)}
+              onClick={() => setServings(n)}
+              className={`${chipClass(servings === n)} min-w-14`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <button
         type="button"
         onClick={generate}
@@ -264,7 +304,7 @@ export default function AppPage() {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Ваши рецепты 🍽️</h2>
             {recipes.map((r, i) => (
-              <RecipeCard key={i} recipe={r} />
+              <RecipeCard key={i} recipe={r} servings={recipesServings} />
             ))}
           </div>
         )}
