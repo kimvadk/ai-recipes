@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import {
   CUISINES,
   DEFAULT_SERVINGS,
+  DIETS,
   INGREDIENTS,
   MAX_INGREDIENTS,
   SERVINGS,
@@ -129,6 +130,7 @@ export default function AppPage() {
   const [error, setError] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [servings, setServings] = useState<number>(DEFAULT_SERVINGS);
+  const [diets, setDiets] = useState<string[]>([]);
   // Порции, с которыми были запрошены показанные рецепты (пользователь мог уже переключить кнопки).
   const [recipesServings, setRecipesServings] = useState<number>(DEFAULT_SERVINGS);
 
@@ -140,6 +142,12 @@ export default function AppPage() {
 
   const allIngredients = [...selected, ...custom];
   const limitReached = allIngredients.length >= MAX_INGREDIENTS;
+
+  function toggleDiet(id: string) {
+    setDiets((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   // Добавляет свой продукт; повторы (даже с другим регистром) не добавляются.
   function addCustom(e: FormEvent) {
@@ -166,6 +174,7 @@ export default function AppPage() {
           cuisine,
           minutes,
           servings,
+          diets,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -304,6 +313,32 @@ export default function AppPage() {
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-xl font-bold">
+          5. Есть ограничения?{" "}
+          <span className="text-base font-normal text-muted">(по желанию)</span>
+        </h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {DIETS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={diets.includes(id)}
+              onClick={() => toggleDiet(id)}
+              className={chipClass(diets.includes(id))}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {diets.length > 0 && (
+          <p className="mt-3 text-sm text-muted">
+            Рецепты придумывает ИИ и он может ошибаться. Если у вас аллергия,
+            обязательно проверяйте состав продуктов.
+          </p>
+        )}
       </section>
 
       <button

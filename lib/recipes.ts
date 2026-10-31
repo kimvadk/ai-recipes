@@ -34,7 +34,16 @@ export const TIMES = [
   { minutes: 60, label: "до 1 часа" },
 ] as const;
 
-export const SERVINGS = [1, 2, 3, 4, 5, 6] as const;
+// Необязательные ограничения по питанию: label — что видит пользователь,
+// prompt — как это формулируется для Gemini.
+export const DIETS = [
+  { id: "vegetarian", label: "Вегетарианское", prompt: "вегетарианское (без мяса, птицы и рыбы)" },
+  { id: "gluten-free", label: "Без глютена", prompt: "без глютена (без пшеницы, ржи, ячменя, обычной муки и макарон)" },
+  { id: "lactose-free", label: "Без лактозы", prompt: "без лактозы (без молока и молочных продуктов с лактозой)" },
+  { id: "nut-free", label: "Без орехов", prompt: "без орехов (без любых орехов и продуктов, которые могут их содержать)" },
+] as const;
+
+export const SERVINGS =[1, 2, 3, 4, 5, 6] as const;
 export const DEFAULT_SERVINGS = 2;
 
 export const MAX_INGREDIENTS = 20;
