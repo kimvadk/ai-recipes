@@ -1,0 +1,23 @@
+# Секреты — никогда не коммитить
+.env.local
+.env*.local
+
+# Зависимости и сборка Next.js
+node_modules/
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Прочее из шаблона Next.js
+/build
+/coverage
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
