@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍳 Что приготовить? — AI-повар
 
-## Getting Started
+Сайт, который по продуктам, кухне и времени придумывает **3 рецепта** с ингредиентами и пошаговой инструкцией. Рецепты генерирует Gemini от Google.
 
-First, run the development server:
+**Сайт:** https://ai-recipes-beta.vercel.app/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Для кого
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Для тех, кто открыл холодильник, увидел набор продуктов и не знает, что из него приготовить. Регистрация не нужна, ничего не сохраняется: отметили продукты — получили рецепты.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Что умеет
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Выбор продуктов кнопками **и ввод своих**, если нужного нет в списке.
+- Кухня: любая, домашняя, европейская, итальянская, азиатская, грузинская.
+- Время: до 15 минут, до 30 минут, до 1 часа.
+- Порции: от 1 до 6.
+- Необязательные ограничения: вегетарианское, без глютена, без лактозы, без орехов.
+- Три рецепта на выбор. В каждом помечено, всё ли нужное есть дома (**✅ Всё есть**) или что придётся докупить (**🛒 Докупить: …**).
+- Кнопка «Скопировать рецепт», чтобы отправить его в заметки или мессенджер.
 
-## Learn More
+> Рецепты придумывает ИИ, и он может ошибаться. Если у вас аллергия, всегда проверяйте состав продуктов.
 
-To learn more about Next.js, take a look at the following resources:
+## Как запустить у себя
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Понадобятся [Node.js](https://nodejs.org/) и ключ Gemini API (его можно бесплатно получить в [Google AI Studio](https://aistudio.google.com/apikey)).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Скачайте проект и откройте терминал в его папке.
+2. Установите зависимости:
 
-## Deploy on Vercel
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Создайте в корне проекта файл `.env.local` и впишите в него одну строку, подставив свой ключ вместо `ваш_ключ`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```
+   GEMINI_API_KEY=ваш_ключ
+   ```
+
+4. Запустите сайт:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Откройте http://localhost:3000.
+
+Файл `.env.local` не попадает в git (он указан в `.gitignore`), поэтому ключ не утечёт. Никому не показывайте ключ и не вставляйте его в код.
+
+## Как это устроено
+
+1. Браузер отправляет продукты, кухню, время, порции и ограничения на сервер сайта (`/api/generate`).
+2. Сервер собирает запрос для Gemini и просит ответить в формате JSON.
+3. Если выбранная модель недоступна (закончился бесплатный лимит или она перегружена), сервер сам пробует следующую из списка.
+4. Готовые рецепты возвращаются в браузер и показываются карточками.
+
+Ключ Gemini используется **только на сервере** и в браузер не попадает.
+
+## Технологии
+
+[Next.js](https://nextjs.org) (App Router) · [Tailwind CSS](https://tailwindcss.com) · [Gemini API](https://ai.google.dev) (`@google/genai`) · деплой на [Vercel](https://vercel.com)
+
+## Структура проекта
+
+| Путь | Что это |
+|---|---|
+| `app/page.tsx` | главная страница (лендинг) |
+| `app/app/page.tsx` | страница `/app`: форма и карточки рецептов |
+| `app/api/generate/route.ts` | серверная часть: общение с Gemini |
+| `lib/recipes.ts` | общие списки: продукты, кухни, время, порции, ограничения |
+| `CLAUDE.md` | правила проекта |
+| `PLAN.md` | исходный план приложения |
+| `BUILD_LOG.md` | журнал: что и когда менялось |
+
+## Ограничения
+
+Используется бесплатный уровень Gemini API: у каждой модели есть дневной лимит запросов (около 20 в сутки на модель). Если лимит исчерпан у всех моделей, сайт сообщит об этом и снова заработает позже.
